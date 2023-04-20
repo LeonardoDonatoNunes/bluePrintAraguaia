@@ -35,7 +35,7 @@ for (i in seq_along(arquivos)) {
 
   intersects <- st_intersects(dados_sf, bacias)
   num_species <- apply(intersects, 2, function(x) n_distinct(dados_sf$species[x]))
-  bacias[names(dados)[i]] <- num_species
+  bacias$numEspecies <- num_species
 
   sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}.shp'))
 
