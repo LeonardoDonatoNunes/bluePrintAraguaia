@@ -1,8 +1,9 @@
 library(sf)
 library(tidyverse)
 
-bacias <- read_sf('invertebrados/shpGeral/hidrografia_selected/bacias_ainhadas.shp')
+bacias <- read_sf('shpGeral/hidrografia_selected/bacias_ainhadas.shp')
 bacias <- bacias[,1]
+limite_bacia <- sf::read_sf('shpGeral/limite_bacia_oficial/limite_bacia_oficiala.shp')
 
 arquivos <- list(
   bivalvia = 'invertebrados/ocorrencias/Validado_Bivalvia_consolidado_05abr23.xlsx',
@@ -31,7 +32,7 @@ for (i in seq_along(arquivos)) {
     dplyr::mutate(
       longitude = decimallongitude,
       latitude = decimallatitude) %>%
-    st_as_sf(coords = c('longitude', 'latitude'), crs = szt_crs(bacias))
+    st_as_sf(coords = c('longitude', 'latitude'), crs = sf::st_crs(bacias))
 
   intersects <- st_intersects(dados_sf, bacias)
   num_species <- apply(intersects, 2, function(x) n_distinct(dados_sf$species[x]))
@@ -68,7 +69,8 @@ for (i in seq_along(arquivos)) {
   num_species <- apply(intersects, 2, function(x) length(dados_sf$species[x]))
   bacias$numEspecies <- num_species
 
-  sf::write_sf(dados_sf, glue::glue('invertebrados/shp/{nome}_ocorrencia_nativas_pontos.shp'), delete_layer = TRUE)
+  ocorrencias_pontos <- sf::st_intersection(dados_sf, limite_bacia)
+  sf::write_sf(ocorrencias_pontos, glue::glue('invertebrados/shp/{nome}_ocorrencia_nativas_pontos.shp'), delete_layer = TRUE)
   sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_ocorrencia_nativas.shp'), delete_layer = TRUE)
 
 }
@@ -101,8 +103,58 @@ for (i in seq_along(arquivos)) {
   intersects <- st_intersects(dados_sf, bacias)
   num_species <- apply(intersects, 2, function(x) length(dados_sf$species[x]))
   bacias$numEspecies <- num_species
+  ocorrencias_pontos <- sf::st_intersection(dados_sf, limite_bacia)
 
-  sf::write_sf(dados_sf, glue::glue('invertebrados/shp/{nome}_ocorrencia_invasor_pontos.shp'), delete_layer = TRUE)
+  sf::write_sf(ocorrencias_pontos, glue::glue('invertebrados/shp/{nome}_ocorrencia_invasor_pontos.shp'), delete_layer = TRUE)
   sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_ocorrencia_invasor.shp'), delete_layer = TRUE)
 
 }
+
+
+
+# Bivalvia - ameaçadas --------------------------------------------------
+dados <- openxlsx::read.xlsx(arquivos$bivalvia)
+names(dados) <- stringr::str_to_lower(names(dados))
+colunas <- names(dados) %>% table
+colunas <- names(colunas[colunas > 1])
+dup_index <- purrr::map_dbl(colunas, ~max(which(names(dados) == .x)))
+dados <- dados[, -dup_index]
+
+dados_sf <-
+  dados %>%
+  dplyr::filter(!is.na(categoria_iucn)) %>%
+  dplyr::mutate(
+    longitude = decimallongitude,
+    latitude = decimallatitude) %>%
+  st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
+
+
+intersects <- st_intersects(dados_sf, bacias)
+num_species <- apply(intersects, 2, function(x) n_distinct(dados_sf$species[x]))
+bacias$numEspecies <- num_species
+
+sf::write_sf(bacias, glue::glue('invertebrados/shp/bivalvia_riqueza_ameacadas.shp'), delete_layer = TRUE)
+
+
+# Decapoda - ameaçadas --------------------------------------------------
+dados <- openxlsx::read.xlsx(arquivos$decapoda)
+names(dados) <- stringr::str_to_lower(names(dados))
+colunas <- names(dados) %>% table
+colunas <- names(colunas[colunas > 1])
+dup_index <- purrr::map_dbl(colunas, ~max(which(names(dados) == .x)))
+dados <- dados[, -dup_index]
+
+dados_sf <-
+  dados %>%
+  dplyr::filter(!is.na(categoria_iucn)) %>%
+  dplyr::mutate(
+    longitude = decimallongitude,
+    latitude = decimallatitude) %>%
+  st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
+
+
+intersects <- st_intersects(dados_sf, bacias)
+num_species <- apply(intersects, 2, function(x) n_distinct(dados_sf$species[x]))
+bacias$numEspecies <- num_species
+
+sf::write_sf(bacias, glue::glue('invertebrados/shp/decapoda_riqueza_ameacadas.shp'), delete_layer = TRUE)
