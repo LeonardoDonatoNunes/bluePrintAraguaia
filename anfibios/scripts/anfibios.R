@@ -1,106 +1,58 @@
 library(sf)
 library(tidyverse)
+if (!dir.exists('anfibios/shp')) {dir.create('anfibios/shp')}
+nome = 'anfibios'
 
-bacias <- read_sf('shpGeral/hidrografia_selected/bacias_ainhadas.shp')
-bacias <- bacias[,1]
+# Carrega os a shapefile com os pligonos das bacias aninhadas
+bacias <- sf::read_sf('shpGeral/hidrografia_selected/bacias_ainhadas.shp')
+bacias <- bacias[,1] # Mantém somente a primeira coluna que tem o ID de cada polígono
+limite_bacia <- sf::read_sf('shpGeral/limite_bacia_oficial/limite_bacia_oficiala.shp')
 
-arquivos <- list(
-  bivalvia = 'invertebrados/ocorrencias/Validado_Bivalvia_consolidado_05abr23.xlsx'
-  )
+# Carrega os dados de anfíbios
+anfibios = read.csv('anfibios/ocorrencias/occ_integradas_anfibios_limpas_filtradas.csv')
 
-# Cria camada de riqueza das espécies nativas
-for (i in seq_along(arquivos)) {
+dados_sf <-
+  anfibios %>%
+  st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
 
-  nome <- names(arquivos)[i]
-  dados <- openxlsx::read.xlsx(arquivos[[i]])
+intersects <- st_intersects(dados_sf, bacias)
 
-  names(dados) <- stringr::str_to_lower(names(dados))
-  colunas <- names(dados) %>% table
-  colunas <- names(colunas[colunas > 1])
-  dup_index <- purrr::map_dbl(colunas, ~max(which(names(dados) == .x)))
-  dados <- dados[, -dup_index]
+# Calcula a riqueza de espécies
+num_species <- apply(intersects, 2, function(x) n_distinct(dados_sf$species_searched[x]))
+bacias$numEspecies <- num_species
+sf::write_sf(bacias, glue::glue('anfibios/shp/{nome}_riqueza_nativas.shp'), delete_layer = TRUE)
 
-  dados_sf <-
-    dados %>%
-    dplyr::mutate(
-      deletar = stringr::str_to_lower(deletar),
-      deletar = dplyr::if_else(is.na(deletar), 'nao', deletar)) %>%
-    dplyr::filter(deletar == 'nao') %>%
-    dplyr::mutate(
-      longitude = decimallongitude,
-      latitude = decimallatitude) %>%
-    st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
 
-  intersects <- st_intersects(dados_sf, bacias)
-  num_species <- apply(intersects, 2, function(x) n_distinct(dados_sf$species[x]))
-  bacias$numEspecies <- num_species
+# Calcula a ocorrência de anfíbios
+ocorrencias <- apply(intersects, 2, function(x) length(dados_sf$species[x]))
+bacias$numEspecies <- ocorrencias
+sf::write_sf(bacias, glue::glue('anfibios/shp/{nome}_ocorrencias_nativas.shp'), delete_layer = TRUE)
 
-  sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_riqueza_nativas.shp'))
+ocorrencias_pontos <- sf::st_intersection(dados_sf, limite_bacia)
+sf::write_sf(ocorrencias_pontos, glue::glue('anfibios/shp/{nome}_ocorrencias_nativas_pontos.shp'), delete_layer = TRUE)
 
-}
 
-# Cria camadas das ocorrências das espécies nativas
-for (i in seq_along(arquivos)) {
+# Riqueza de espécies ameaçadas
 
-  nome <- names(arquivos)[i]
-  dados <- openxlsx::read.xlsx(arquivos[[i]])
+    #      Extinta (EX) – Extinct
+    #      Extinta na Natureza (EW) – Extinct in the Wild
+    #      Regionalmente Extinta (RE) – Regionally Extinct
+    #      Criticamente em Perigo (CR) – Critically
+    #      Endangered Em Perigo (EN) – Endangered
+    #      Vulnerável (VU) – Vulnerable
+    #      Quase Ameaçada (NT) – Near Threatened
+    #      Menos Preocupante (LC) – Least Concern
+    #      Dados Insuficientes (DD) – Data Deficient
+    #      Não Aplicável (NA) – Not Applicable
+    #      Não Avaliada (NE) – Not Evaluated
 
-  names(dados) <- stringr::str_to_lower(names(dados))
-  colunas <- names(dados) %>% table
-  colunas <- names(colunas[colunas > 1])
-  dup_index <- purrr::map_dbl(colunas, ~max(which(names(dados) == .x)))
-  dados <- dados[, -dup_index]
+dados_sf_ameacadas <-
+  dados_sf %>%
+  dplyr::filter(categoria_iucn %in% c('CR', 'EN', 'VU'))
 
-  dados_sf <-
-    dados %>%
-    dplyr::mutate(
-      deletar = stringr::str_to_lower(deletar),
-      deletar = dplyr::if_else(is.na(deletar), 'nao', deletar)) %>%
-    dplyr::filter(deletar == 'nao') %>%
-    dplyr::mutate(
-      longitude = decimallongitude,
-      latitude = decimallatitude) %>%
-    st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
+intersects <- st_intersects(dados_sf_ameacadas, bacias)
 
-  intersects <- st_intersects(dados_sf, bacias)
-  num_species <- apply(intersects, 2, function(x) length(dados_sf$species[x]))
-  bacias$numEspecies <- num_species
-
-  sf::write_sf(dados_sf, glue::glue('invertebrados/shp/{nome}_ocorrencia_nativas_pontos.shp'))
-  sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_ocorrencia_nativas.shp'))
-
-}
-
-# Cria camadas das ocorrências das espécies não nativas
-for (i in seq_along(arquivos)) {
-
-  nome <- names(arquivos)[i]
-  dados <- openxlsx::read.xlsx(arquivos[[i]])
-
-  names(dados) <- stringr::str_to_lower(names(dados))
-
-  if (!'origem' %in% names(dados)) {next}
-
-  colunas <- names(dados) %>% table
-  colunas <- names(colunas[colunas > 1])
-  dup_index <- purrr::map_dbl(colunas, ~max(which(names(dados) == .x)))
-  dados <- dados[, -dup_index]
-
-  dados_sf <-
-    dados %>%
-    dplyr::filter(origem == 'invasor') %>%
-    dplyr::mutate(
-      longitude = decimallongitude,
-      latitude = decimallatitude) %>%
-    st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
-
-  if (nrow(dados_sf) == 0) {next}
-
-  intersects <- st_intersects(dados_sf, bacias)
-  num_species <- apply(intersects, 2, function(x) length(dados_sf$species[x]))
-  bacias$numEspecies <- num_species
-
-  sf::write_sf(dados_sf, glue::glue('invertebrados/shp/{nome}_ocorrencia_invasor_pontos.shp'))
-  sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_ocorrencia_invasor.shp'))
-
-}
+# Calcula a riqueza de espécies
+num_species <- apply(intersects, 2, function(x) n_distinct(dados_sf_ameacadas$species_searched[x]))
+bacias$numEspecies <- num_species
+sf::write_sf(bacias, glue::glue('anfibios/shp/{nome}_riqueza_ameacadas.shp'), delete_layer = TRUE)

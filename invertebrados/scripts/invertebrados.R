@@ -31,13 +31,13 @@ for (i in seq_along(arquivos)) {
     dplyr::mutate(
       longitude = decimallongitude,
       latitude = decimallatitude) %>%
-    st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
+    st_as_sf(coords = c('longitude', 'latitude'), crs = szt_crs(bacias))
 
   intersects <- st_intersects(dados_sf, bacias)
   num_species <- apply(intersects, 2, function(x) n_distinct(dados_sf$species[x]))
   bacias$numEspecies <- num_species
 
-  sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_riqueza_nativas.shp'))
+  sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_riqueza_nativas.shp'), delete_layer = TRUE)
 
 }
 
@@ -68,8 +68,8 @@ for (i in seq_along(arquivos)) {
   num_species <- apply(intersects, 2, function(x) length(dados_sf$species[x]))
   bacias$numEspecies <- num_species
 
-  sf::write_sf(dados_sf, glue::glue('invertebrados/shp/{nome}_ocorrencia_nativas_pontos.shp'))
-  sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_ocorrencia_nativas.shp'))
+  sf::write_sf(dados_sf, glue::glue('invertebrados/shp/{nome}_ocorrencia_nativas_pontos.shp'), delete_layer = TRUE)
+  sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_ocorrencia_nativas.shp'), delete_layer = TRUE)
 
 }
 
@@ -102,7 +102,7 @@ for (i in seq_along(arquivos)) {
   num_species <- apply(intersects, 2, function(x) length(dados_sf$species[x]))
   bacias$numEspecies <- num_species
 
-  sf::write_sf(dados_sf, glue::glue('invertebrados/shp/{nome}_ocorrencia_invasor_pontos.shp'))
-  sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_ocorrencia_invasor.shp'))
+  sf::write_sf(dados_sf, glue::glue('invertebrados/shp/{nome}_ocorrencia_invasor_pontos.shp'), delete_layer = TRUE)
+  sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_ocorrencia_invasor.shp'), delete_layer = TRUE)
 
 }
