@@ -48,7 +48,7 @@ sf::write_sf(ocorrencias_pontos, glue::glue('anfibios/shp/{nome}_ocorrencias_nat
 
 dados_sf_ameacadas <-
   dados_sf %>%
-  dplyr::filter(categoria_iucn %in% c('CR', 'EN', 'VU'))
+  dplyr::filter(cateoria_iucn %in% c('CR', 'EN', 'VU'))
 
 intersects <- st_intersects(dados_sf_ameacadas, bacias)
 
