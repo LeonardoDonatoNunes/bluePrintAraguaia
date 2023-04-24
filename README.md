@@ -10,6 +10,7 @@ Projeto para criação dos mapas 🗺️
     Invertebrados 🐌
     Anfíbios 🐸
     Peixes 🐟
+    Aves 🦤
 
 
 Criação dos mapas de ocorrência e riqueza.

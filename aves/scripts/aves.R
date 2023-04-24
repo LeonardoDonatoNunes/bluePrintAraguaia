@@ -45,5 +45,12 @@ aves_aquativas_amea <-
   dplyr::mutate(
     categoria_mma  = if_else(categoria_mma  %in% ameacas, 1, NA_integer_),
     categoria_iucn = if_else(categoria_iucn %in% ameacas, 1, NA_integer_),
-    categoria_iucn    = coalesce(categoria_mma, categoria_iucn)
+    ameacadas  = coalesce(categoria_mma, categoria_iucn)
     )
+
+
+# Calcula a riqueza de espécies ameacadas
+intersects <- st_intersects(aves_aquativas_amea, bacias)
+num_species <- apply(intersects, 2, function(x) n_distinct(aves_aquativas_amea$species_searched[x]))
+bacias$numEspecies <- num_species
+sf::write_sf(bacias, glue::glue('aves/shp/{nome}_riqueza_nativas_amecadas.shp'), delete_layer = TRUE)
