@@ -7,10 +7,12 @@ Projeto para criação dos mapas 🗺️
 
   Categorias:
   
-    Invertebrados 🐌
-    Anfíbios 🐸
-    Peixes 🐟
-    Aves 🦤
+  Invertebrados 🐌
+  Peixes 🐟
+  Anfíbios 🐸
+  Repteis 🦎
+  Aves 🦤
+  Mamíferos 🦝
 
 
 Criação dos mapas de ocorrência e riqueza.
