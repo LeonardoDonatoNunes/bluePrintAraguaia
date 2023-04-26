@@ -8,10 +8,15 @@ Projeto para criação dos mapas 🗺️
   Categorias:
   
   Invertebrados 🐌
+  
   Peixes 🐟
+  
   Anfíbios 🐸
+  
   Repteis 🦎
+  
   Aves 🦤
+  
   Mamíferos 🦝
 
 
