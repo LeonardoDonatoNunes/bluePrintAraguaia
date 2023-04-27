@@ -70,3 +70,24 @@ num_species <- apply(intersects, 2, function(x) length(dados_sf$species_se[x]))
 bacias$numEspecies <- num_species
 sf::write_sf(bacias, glue::glue('mamiferos/shp/{nome}_ocorrencia_aquaticas_e_semi.shp'), delete_layer = TRUE)
 sf::write_sf(dados_sf, glue::glue('mamiferos/shp/{nome}_ocorrencia_aquaticas_e_semi_pontos.shp'), delete_layer = TRUE)
+
+# Mamíferos ameaçados
+ameacas <- c('CR', 'EN', 'VU')
+
+dados_sf <-
+  mamiferos %>%
+  dplyr::filter(species_se %in% unique(atrr[atrr$Ambiente %in% c('aquático', 'semi-aquático'), ]$species_se)) %>%
+  sf::st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias)) %>%
+  dplyr::mutate(
+    cat1 = if_else(categori_1 %in% ameacas, 1, NA_integer_),
+    cat2 = if_else(categoria_ %in% ameacas, 1, NA_integer_),
+    sp_ameacada = coalesce(cat1, cat2)
+  ) %>%
+  dplyr::filter(sp_ameacada == 1)
+
+intersects <- st_intersects(dados_sf, bacias)
+
+# Calcula a riqueza de espécies
+num_species <- apply(intersects, 2, function(x) n_distinct(dados_sf$species_se[x]))
+bacias$numEspecies <- num_species
+sf::write_sf(bacias, glue::glue('mamiferos/shp/{nome}_riqueza_amecados.shp'), delete_layer = TRUE)

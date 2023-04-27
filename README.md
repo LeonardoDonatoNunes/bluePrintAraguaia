@@ -18,6 +18,10 @@ Projeto para criação dos mapas 🗺️
   Aves 🦤
   
   Mamíferos 🦝
+  
+  Mustelídeos 🦦
+  
+  Crocodilya 🐊
 
 
 Criação dos mapas de ocorrência e riqueza.
