@@ -31,6 +31,10 @@ sf::write_sf(bacias, glue::glue('anfibios/shp/{nome}_ocorrencias_nativas.shp'), 
 ocorrencias_pontos <- sf::st_intersection(dados_sf, limite_bacia)
 sf::write_sf(ocorrencias_pontos, glue::glue('anfibios/shp/{nome}_ocorrencias_nativas_pontos.shp'), delete_layer = TRUE)
 
+ocorrencias_pontos %>%
+  dplyr::mutate(geometry = as.character(geometry)) %>%
+  openxlsx::write.xlsx(., 'anfibios/ocorrencias/anfibios_ocorrencias_exportado.xlsx', overwrite = TRUE)
+
 
 # Riqueza de espécies ameaçadas
 

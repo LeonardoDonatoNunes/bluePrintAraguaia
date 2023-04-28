@@ -22,7 +22,13 @@ sp_aquaticas <- unique(aves_aquaticas[aves_aquaticas$tipo == 'aquatica', ]$speci
 
 aves_geral <-
   dados_sf %>%
-  dplyr::filter(species_searched %in% aves_aquaticas$species_se)
+  dplyr::filter(species_searched %in% aves_aquaticas$species_se) %>%
+  dplyr::left_join(aves_aquaticas %>%  dplyr::mutate(tipo = dplyr::if_else(tipo == 'semi', 'semi-aquático', 'aquático')) %>% dplyr::rename(species_searched = species_se, ambiente = tipo))
+
+aves_geral %>%
+  dplyr::mutate(geometry = as.character(geometry)) %>%
+  openxlsx::write.xlsx(., 'aves/ocorrencias/aves_ocorrencias_exportado.xlsx', overwrite = TRUE)
+
 
 # Calcula a riqueza de espécies
 intersects <- st_intersects(aves_geral, bacias)

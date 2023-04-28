@@ -15,6 +15,20 @@ repteis_classificacao <- openxlsx::read.xlsx('repteis/ocorrencias/Repteis_Aragua
 especies_aquaticas <- unique(repteis_classificacao[repteis_classificacao$Aquática == 'Sim', ]$species_se)
 especies_semi_aquaticas <- unique(repteis_classificacao[repteis_classificacao$SemiAquática == 'Sim', ]$species_se)
 
+ambientes <-
+  expand.grid(
+    species_se = especies_aquaticas,
+    ambiente = 'aquático'
+  ) %>% bind_rows(
+    expand.grid(
+      species_se = especies_semi_aquaticas,
+      ambiente = 'semi-aquático'
+    )
+  )
+
+
+
+
 repteis <-
   repteis_or %>%
   dplyr::filter(!species_se %in% c("Eretmochelys imbricata", "Lepidochelys olivacea"))
@@ -75,6 +89,11 @@ bacias$numEspecies <- num_species
 
 sf::write_sf(bacias, glue::glue('repteis/shp/{nome}_riqueza_semi_aquaticas_aquaticas.shp'), delete_layer = TRUE)
 
+dados_sf %>%
+  dplyr::mutate(geometry = as.character(geometry)) %>%
+  as.data.frame() %>%
+  dplyr::left_join(ambientes) %>%
+  openxlsx::write.xlsx(., 'repteis/ocorrencias/repteis_ocorrencias_exportado.xlsx', overwrite = TRUE)
 
 
 # Riqueza ameaçados

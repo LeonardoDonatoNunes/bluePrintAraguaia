@@ -59,6 +59,17 @@ dados_sf <-
   dplyr::filter(species_se %in% unique(atrr[atrr$Ambiente %in% c('aquático', 'semi-aquático'), ]$species_se)) %>%
   sf::st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
 
+ambientes <-
+  atrr %>%
+  dplyr::select(species_se, ambiente = Ambiente) %>%
+  dplyr::distinct()
+
+dados_sf %>%
+  dplyr::mutate(geometry = as.character(geometry)) %>%
+  as.data.frame() %>%
+  dplyr::left_join(ambientes) %>%
+  openxlsx::write.xlsx(., 'mamiferos/ocorrencias/mamiferos_ocorrencias_exportado.xlsx', overwrite = TRUE)
+
 intersects <- st_intersects(dados_sf, bacias)
 
 # Calcula a riqueza de espécies

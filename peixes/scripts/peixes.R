@@ -12,6 +12,14 @@ atributos_or <- openxlsx::read.xlsx('peixes/ocorrencias/peixes_spvalidas_atribut
 ocorrencias_or <- openxlsx::read.xlsx('peixes/ocorrencias/peixes_ocorrencias_validadas.xlsx')
 ocorrencias_invasores <- openxlsx::read.xlsx('peixes/ocorrencias/peixes_ocorrencia_invasor.xlsx')
 
+
+colunas <- names(atributos_or) %>% table
+colunas <- names(colunas[colunas > 1])
+dup_index <- purrr::map_dbl(colunas, ~max(which(names(atributos_or) == .x)))
+atributos_or <- atributos_or[, -dup_index]
+
+rivulideos <- atributos_or %>% dplyr::filter(`Rivulidae.(>2007)` == 1) %>% dplyr::pull(BINOMIO) %>% unique()
+
 ocorrencias_or$Obs %>% unique
 
 ocorrencias <-
@@ -22,8 +30,20 @@ ocorrencias <-
   dplyr::filter(species != "Moenkhausia alesis") %>%
   dplyr::mutate(
     longitude = geometry %>% purrr::map_chr(~eval(parse(text = paste0(.x, '[1]')))),
-    latitude = geometry %>% purrr::map_chr(~eval(parse(text = paste0(.x, '[2]'))))) %>%
-  sf::st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
+    latitude = geometry %>% purrr::map_chr(~eval(parse(text = paste0(.x, '[2]')))),
+    lat = latitude,
+    long = longitude) %>%
+  sf::st_as_sf(coords = c('long', 'lat'), crs = st_crs(bacias))
+
+
+
+
+ocorrencias_rivulideos <-
+  ocorrencias %>%
+  dplyr::filter(species %in% rivulideos)
+
+sf::write_sf(ocorrencias_rivulideos, 'peixes/shp/peixes_ocorrencias_rivulideos.shp', delete_layer = TRUE)
+
 
 ameacas <- c('CR', 'EN', 'VU')
 
@@ -50,7 +70,18 @@ atributos <-
     pa = if_else(pa %in% ameacas, 1, NA_integer_),
     sp_ameacada = coalesce(iucn, icmbio, mt, go, to, pa)
   ) %>%
-  dplyr::select(-iucn, -icmbio, -mt, -go, -to, -pa)
+  dplyr::select(-iucn, -icmbio, -mt, -go, -to, -pa) %>%
+  dplyr::distinct() %>%
+  dplyr::mutate(dplyr::across(dplyr::everything(), ~replace_na(., 0)))
+
+
+ocorrencias_atr <-
+ocorrencias %>%
+  dplyr::left_join(atributos %>% dplyr::rename(migradores_longa_dist = longa, migradores_curta_dist = curta)) %>%
+  dplyr::select(-indice) %>%
+  dplyr::mutate(geometry = as.character(geometry))
+
+openxlsx::write.xlsx(ocorrencias_atr, 'peixes/ocorrencias/peixes_ocorrencias_exportado.xlsx', overwrite = TRUE)
 
 
 endemicas <- ocorrencias %>% dplyr::filter(species %in% (atributos %>% dplyr::filter(endemicas == 1) %>% dplyr::pull(species)))
@@ -101,6 +132,11 @@ ocorrencias_invasor <-
     longitude = geometry %>% purrr::map_chr(~eval(parse(text = paste0(.x, '[1]')))),
     latitude = geometry %>% purrr::map_chr(~eval(parse(text = paste0(.x, '[2]'))))) %>%
   sf::st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
+
+ocorrencias_invasor %>%
+dplyr::mutate(geometry = as.character(geometry)) %>%
+openxlsx::write.xlsx(., 'peixes/ocorrencias/peixes_ocorrencias_invasores_exportado.xlsx', overwrite = TRUE)
+
 
 
 intersects <- st_intersects(ocorrencias_invasor, bacias)

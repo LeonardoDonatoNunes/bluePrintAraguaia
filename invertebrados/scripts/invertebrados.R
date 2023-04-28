@@ -73,6 +73,11 @@ for (i in seq_along(arquivos)) {
   sf::write_sf(ocorrencias_pontos, glue::glue('invertebrados/shp/{nome}_ocorrencia_nativas_pontos.shp'), delete_layer = TRUE)
   sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_ocorrencia_nativas.shp'), delete_layer = TRUE)
 
+  ocorrencias_pontos %>%
+    dplyr::mutate(geometry = as.character(geometry)) %>%
+    openxlsx::write.xlsx(., glue::glue('invertebrados/ocorrencias/{nome}_ocorrencias_nativas_exportado.xlsx'), overwrite = TRUE)
+
+
 }
 
 # Cria camadas das ocorrências das espécies não nativas
@@ -107,6 +112,11 @@ for (i in seq_along(arquivos)) {
 
   sf::write_sf(ocorrencias_pontos, glue::glue('invertebrados/shp/{nome}_ocorrencia_invasor_pontos.shp'), delete_layer = TRUE)
   sf::write_sf(bacias, glue::glue('invertebrados/shp/{nome}_ocorrencia_invasor.shp'), delete_layer = TRUE)
+
+  ocorrencias_pontos %>%
+    dplyr::mutate(geometry = as.character(geometry)) %>%
+    openxlsx::write.xlsx(., glue::glue('invertebrados/ocorrencias/{nome}_ocorrencias_nao_nativas_exportado.xlsx'), overwrite = TRUE)
+
 
 }
 
