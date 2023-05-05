@@ -61,7 +61,8 @@ dados_sf_ameacadas <-
   dplyr::filter(
     categoria_iucn  %in%  categorias_ameaca |
     categoria_mma %in% categorias_ameaca
-    )
+    ) %>%
+  sf::st_intersection(limite_bacia)
 
 intersects <- st_intersects(dados_sf_ameacadas, bacias)
 
@@ -69,3 +70,6 @@ intersects <- st_intersects(dados_sf_ameacadas, bacias)
 num_species <- apply(intersects, 2, function(x) n_distinct(dados_sf_ameacadas$species_searched[x]))
 bacias$numEspecies <- num_species
 sf::write_sf(bacias, glue::glue('anfibios/shp/{nome}_riqueza_ameacadas.shp'), delete_layer = TRUE)
+sf::write_sf(dados_sf_ameacadas, glue::glue('anfibios/shp/{nome}_ocorrencia_ameacadas_pontos.shp'), delete_layer = TRUE)
+
+

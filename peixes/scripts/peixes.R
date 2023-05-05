@@ -12,7 +12,6 @@ atributos_or <- openxlsx::read.xlsx('peixes/ocorrencias/peixes_spvalidas_atribut
 ocorrencias_or <- openxlsx::read.xlsx('peixes/ocorrencias/peixes_ocorrencias_validadas.xlsx')
 ocorrencias_invasores <- openxlsx::read.xlsx('peixes/ocorrencias/peixes_ocorrencia_invasor.xlsx')
 
-
 colunas <- names(atributos_or) %>% table
 colunas <- names(colunas[colunas > 1])
 dup_index <- purrr::map_dbl(colunas, ~max(which(names(atributos_or) == .x)))
@@ -35,6 +34,14 @@ ocorrencias <-
     long = longitude) %>%
   sf::st_as_sf(coords = c('long', 'lat'), crs = st_crs(bacias))
 
+ocorrencia_por_base <-
+  ocorrencias %>%
+  as.data.frame() %>%
+  dplyr::count(species, base) %>%
+  tidyr::pivot_wider(names_from = 'base', values_from = "n") %>%
+  dplyr::mutate(dplyr::across(-species, ~ifelse(is.na(.), 0, 1)))
+
+openxlsx::write.xlsx(ocorrencia_por_base, 'peixes/ocorrencias/ocorrencia_por_base.xlsx', overwrite = TRUE)
 
 lista_de_especies <-
   ocorrencias %>%
@@ -81,7 +88,7 @@ atributos <-
 
 
 ocorrencias_atr <-
-ocorrencias %>%
+  ocorrencias %>%
   dplyr::left_join(atributos %>% dplyr::rename(migradores_longa_dist = longa, migradores_curta_dist = curta)) %>%
   dplyr::select(-indice) %>%
   dplyr::mutate(geometry = as.character(geometry))
@@ -139,8 +146,8 @@ ocorrencias_invasor <-
   sf::st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
 
 ocorrencias_invasor %>%
-dplyr::mutate(geometry = as.character(geometry)) %>%
-openxlsx::write.xlsx(., 'peixes/ocorrencias/peixes_ocorrencias_invasores_exportado.xlsx', overwrite = TRUE)
+  dplyr::mutate(geometry = as.character(geometry)) %>%
+  openxlsx::write.xlsx(., 'peixes/ocorrencias/peixes_ocorrencias_invasores_exportado.xlsx', overwrite = TRUE)
 
 
 
