@@ -36,7 +36,12 @@ ocorrencias <-
   sf::st_as_sf(coords = c('long', 'lat'), crs = st_crs(bacias))
 
 
+lista_de_especies <-
+  ocorrencias %>%
+  dplyr::distinct(species) %>%
+  dplyr::arrange(species)
 
+openxlsx::write.xlsx(lista_de_especies, 'C:/Users/leona/Desktop/lista_de_especies_2.xlsx', overwrite = TRUE)
 
 ocorrencias_rivulideos <-
   ocorrencias %>%

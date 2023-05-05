@@ -11,6 +11,10 @@ limite_bacia <- sf::read_sf('shpGeral/limite_bacia_oficial/limite_bacia_oficiala
 # Carrega os dados de anfíbios
 anfibios = read.csv('anfibios/ocorrencias/occ_integradas_anfibios_limpas_filtradas.csv')
 
+
+anfibios %>%
+  dplyr::filter(species_searched %in% c('Allobates brunneus', 'Dasypops schirchi'))
+
 dados_sf <-
   anfibios %>%
   st_as_sf(coords = c('longitude', 'latitude'), crs = st_crs(bacias))
@@ -50,9 +54,14 @@ ocorrencias_pontos %>%
     #      Não Aplicável (NA) – Not Applicable
     #      Não Avaliada (NE) – Not Evaluated
 
+categorias_ameaca <- c('CR', 'EN', 'VU')
+
 dados_sf_ameacadas <-
   dados_sf %>%
-  dplyr::filter(cateoria_iucn %in% c('CR', 'EN', 'VU'))
+  dplyr::filter(
+    categoria_iucn  %in%  categorias_ameaca |
+    categoria_mma %in% categorias_ameaca
+    )
 
 intersects <- st_intersects(dados_sf_ameacadas, bacias)
 
