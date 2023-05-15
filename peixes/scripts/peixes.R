@@ -8,8 +8,8 @@ bacias <- sf::read_sf('shpGeral/hidrografia_selected/bacias_ainhadas.shp')
 bacias <- bacias[,1] # Mantém somente a primeira coluna que tem o ID de cada polígono
 limite_bacia <- sf::read_sf('shpGeral/limite_bacia_oficial/limite_bacia_oficiala.shp')
 
-atributos_or <- openxlsx::read.xlsx('peixes/ocorrencias/peixes_spvalidas_atributos.xlsx')
-ocorrencias_or <- openxlsx::read.xlsx('peixes/ocorrencias/peixes_ocorrencias_validadas.xlsx')
+atributos_or <- openxlsx::read.xlsx('peixes/ocorrencias/peixes_spvalidas_atributos_v4.xlsx')
+ocorrencias_or <- openxlsx::read.xlsx('peixes/ocorrencias/peixes_ocorrencias_validadas_v4.xlsx', sheet = 1)
 ocorrencias_invasores <- openxlsx::read.xlsx('peixes/ocorrencias/peixes_ocorrencia_invasor.xlsx')
 
 colunas <- names(atributos_or) %>% table
@@ -56,7 +56,6 @@ ocorrencias_rivulideos <-
 
 sf::write_sf(ocorrencias_rivulideos, 'peixes/shp/peixes_ocorrencias_rivulideos.shp', delete_layer = TRUE)
 
-
 ameacas <- c('CR', 'EN', 'VU')
 
 atributos <-
@@ -69,9 +68,9 @@ atributos <-
     to = CAT_TO,
     pa = CAT_PA,
     species = BINOMIO,
-    endemicas = `ENDEMICAS.TOCANTINS_ARAGUAIA.(Dagosta)`,
-    longa = `LONGA.>.500.km`,
-    curta = `CURTA.<.500.km`,
+    endemicas = `ENDÊMICAS.ARAGUAIA.(Dagosta)`,
+    longa = MIGRADOR.LONGA.DISTÂNCIA,
+    curta = MIGRADOR.CURTA.DISTÂNCIA,
     sedentario = `SEDENTÁRIO`) %>%
   dplyr::mutate(
     iucn = if_else(iucn %in% ameacas, 1, NA_integer_),
@@ -125,16 +124,12 @@ for(i in seq_along(dados)) {
 
 }
 
-
-
 intersects <- st_intersects(ocorrencias, bacias)
 num_species <- apply(intersects, 2, function(x) length(ocorrencias$species[x]))
 bacias$numEspecies <- num_species
 
 sf::write_sf(bacias, glue::glue('peixes/shp/peixes_ocorrencias_nativas.shp'), delete_layer = TRUE)
 sf::write_sf(ocorrencias, glue::glue('peixes/shp/peixes_ocorrencias_nativas_pontos.shp'), delete_layer = TRUE)
-
-
 
 
 # Ocorrências invasores -------------------------------------------------
